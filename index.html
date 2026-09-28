@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SYSTEM_FAILURE</title>
+  <style>
+    :root {
+      --green: #00ff66;
+      --red: #ff0033;
+      --bg: #050505;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Courier New', Courier, monospace;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Container Utama */
+    #app {
+      width: 100%;
+      max-width: 600px;
+      height: 90vh;
+      border: 1px solid #333;
+      background: #000;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 20px rgba(0,255,102,0.1);
+    }
+
+    .scroll-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .scroll-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .scroll-container::-webkit-scrollbar-thumb {
+      background: #222;
+    }
+
+    /* Bar Styling */
+    .bar {
+      padding: 12px 16px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.1s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .bar-green {
+      background: rgba(0, 255, 102, 0.1);
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+    .bar-green:hover {
+      background: var(--green);
+      color: #000;
+      box-shadow: 0 0 10px var(--green);
+    }
+
+    .bar-red {
+      background: rgba(255, 0, 51, 0.15);
+      color: var(--red);
+      border: 1px solid var(--red);
+      animation: pulse 1.5s infinite alternate;
+    }
+    .bar-red:hover {
+      background: var(--red);
+      color: #fff;
+      box-shadow: 0 0 12px var(--red);
+    }
+
+    @keyframes pulse {
+      from { border-color: rgba(255,0,51,0.4); }
+      to { border-color: rgba(255,0,51,1); }
+    }
+
+    /* Black Screen Overlay */
+    #black-screen {
+      position: absolute;
+      inset: 0;
+      background: black;
+      z-index: 1000;
+      display: none;
+    }
+
+    /* Glitch Overlay */
+    #glitch-overlay {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.2),
+        rgba(255, 255, 255, 0.2) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      display: none;
+      z-index: 999;
+      pointer-events: none;
+      animation: glitch-anim 0.08s infinite;
+    }
+
+    @keyframes glitch-anim {
+      0% { transform: translate(0); filter: hue-rotate(0deg); }
+      20% { transform: translate(-8px, 5px); }
+      40% { transform: translate(-5px, -8px); filter: hue-rotate(90deg); }
+      60% { transform: translate(8px, 3px); }
+      80% { transform: translate(4px, -5px); filter: hue-rotate(180deg); }
+      100% { transform: translate(0); }
+    }
+
+    /* Step 2 Fullscreen Blocked */
+    #blocked-screen {
+      position: absolute;
+      inset: 0;
+      background: #ff0000;
+      color: #000;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      font-weight: 900;
+      padding: 20px;
+      z-index: 2000;
+    }
+
+    .btn-action {
+      background: #000;
+      color: #fff;
+      border: 2px solid #fff;
+      padding: 15px;
+      margin: 8px 0;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      text-align: center;
+    }
+    .btn-action:hover {
+      background: #fff;
+      color: #000;
+    }
+
+    /* Pop-Up Modal Izinkan Download */
+    #download-modal {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 3000;
+      padding: 20px;
+    }
+
+    .modal-box {
+      background: #111;
+      border: 2px solid var(--red);
+      box-shadow: 0 0 15px rgba(255,0,51,0.5);
+      padding: 24px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .modal-title {
+      color: var(--red);
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .modal-desc {
+      color: #ccc;
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid var(--red);
+      background: #000;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .modal-btn:hover {
+      background: var(--red);
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app">
+    <div id="scroll-target" class="scroll-container"></div>
+    <div id="glitch-overlay"></div>
+    <div id="black-screen"></div>
+    
+    <div id="blocked-screen">
+      <h1 style="font-size: 2.5rem; margin-bottom: 20px;">AKSES DIBLOKIR!</h1>
+      <p>PELANGGARAN HAK AKSES TERDETEKSI. SISTEM DIKUNCI.</p>
+    </div>
+
+    <!-- Modal Izin Download -->
+    <div id="download-modal">
+      <div class="modal-box">
+        <div class="modal-title">[ PERMINTAAN SISTEM ]</div>
+        <div class="modal-desc">Sistem memerlukan izin untuk mengunduh berkas enkripsi lanjutan ke perangkat Anda.</div>
+        <div class="modal-actions">
+          <button class="modal-btn" id="modal-allow-btn">IZINKAN DOWNLOAD</button>
+          <button class="modal-btn" id="modal-cancel-btn">BATAL</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const scrollContainer = document.getElementById('scroll-target');
+    const blackScreen = document.getElementById('black-screen');
+    const glitchOverlay = document.getElementById('glitch-overlay');
+    const blockedScreen = document.getElementById('blocked-screen');
+    const downloadModal = document.getElementById('download-modal');
+
+    // Audio Synthesizer Engine (Web Audio API)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playScreech() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(1400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(3200, audioCtx.currentTime + 0.3);
+      
+      gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    function playGlitchSound() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const bufferSize = audioCtx.sampleRate * 2; // 2 Detik
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = buffer.getChannelData(0);
+      
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+
+      const whiteNoise = audioCtx.createBufferSource();
+      whiteNoise.buffer = buffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1200;
+
+      whiteNoise.connect(filter);
+      filter.connect(audioCtx.destination);
+
+      whiteNoise.start();
+    }
+
+    // Generator File Sampah (Nama selalu unik biar tidak dicegah browser)
+    function downloadJunkFile() {
+      const prefixes = ["CORRUPTED", "DONT_LOOK_BEHIND", "HELP_ME", "ERROR_666", "FATAL_MEMORY", "VOID_DATA", "SYSTEM_FAILURE", "ENTITY"];
+      const exts = [".txt", ".sys", ".dat", ".bin", ".log", ".tmp"];
+      
+      const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+      const randomExt = exts[Math.floor(Math.random() * exts.length)];
+      const uniqueToken = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const timeStamp = Date.now().toString().slice(-4);
+      
+      // Contoh Nama: CORRUPTED_8X2A_9102.txt
+      const filename = `${randomPrefix}_${uniqueToken}_${timeStamp}${randomExt}`;
+      const text = "01001000 01000101 01001100 01000000 00100000 01001101 01000101 ".repeat(150);
+      
+      const element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+      element.setAttribute('download', filename);
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    }
+
+    let isFinalStage = false;
+
+    // Klik apapun di fase akhir akan memaksa download + glitch
+    function handleFinalClick() {
+      playScreech();
+      triggerGlitchEffect(500);
+      downloadJunkFile();
+    }
+
+    document.addEventListener('click', (e) => {
+      if (isFinalStage) {
+        handleFinalClick();
+      }
+    });
+
+    function triggerGlitchEffect(durationMs, callback) {
+      glitchOverlay.style.display = 'block';
+      playGlitchSound();
+      setTimeout(() => {
+        glitchOverlay.style.display = 'none';
+        if (callback) callback();
+      }, durationMs);
+    }
+
+    // ================= STEP 1 =================
+    function initStep1() {
+      scrollContainer.innerHTML = '';
+      const greenTexts = ["RUNNING_LOG", "DATA_OK", "NULL_PTR", "CHECK_SUM", "MEM_ALLOC", "SYS_PING"];
+      const redTexts = ["MISTERIUS_01", "ANOMALY_X", "VOID_LOG", "DO_NOT_OPEN", "FORBIDDEN", "CORRUPTED", "RED_ACT", "ENTROPY_8"];
+
+      let redCount = 0;
+      const redIndices = new Set();
+      while(redIndices.size < 8) {
+        redIndices.add(Math.floor(Math.random() * 190) + 5);
+      }
+
+      for (let i = 0; i < 200; i++) {
+        const bar = document.createElement('div');
+        bar.classList.add('bar');
+
+        if (redIndices.has(i)) {
+          bar.classList.add('bar-red');
+          bar.innerText = `[!] ${redTexts[redCount % redTexts.length]}`;
+          bar.dataset.redIndex = redCount + 1;
+          bar.addEventListener('click', (e) => handleRedBarClick(parseInt(e.target.dataset.redIndex)));
+          redCount++;
+        } else {
+          bar.classList.add('bar-green');
+          bar.innerText = `[OK] ${greenTexts[i % greenTexts.length]} #${i + 1000}`;
+          bar.addEventListener('click', () => initStep2());
+        }
+        scrollContainer.appendChild(bar);
+      }
+    }
+
+    // ================= STEP 2 =================
+    function initStep2() {
+      scrollContainer.innerHTML = '';
+      const correctIndex = Math.floor(Math.random() * 5);
+
+      for (let i = 0; i < 5; i++) {
+        const bar = document.createElement('div');
+        bar.classList.add('bar', 'bar-green');
+        bar.innerText = `NODE PERMISSION #${i + 1}`;
+        
+        if (i === correctIndex) {
+          bar.addEventListener('click', () => {
+            initStep1();
+            setTimeout(() => {
+              const firstRed = document.querySelector('.bar-red');
+              if (firstRed) firstRed.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          });
+        } else {
+          bar.addEventListener('click', () => {
+            blockedScreen.style.display = 'flex';
+            playScreech();
+          });
+        }
+        scrollContainer.appendChild(bar);
+      }
+    }
+
+    // ================= RED BARS LOGIC =================
+    function handleRedBarClick(index) {
+      if (index >= 1 && index <= 6) {
+        blackScreen.style.display = 'block';
+        playScreech();
+        setTimeout(() => {
+          blackScreen.style.display = 'none';
+        }, 1500);
+      } 
+      else if (index === 8 || index === 7) {
+        initBar7Screen();
+      }
+    }
+
+    // ================= SCREEN BAR 7 =================
+    function initBar7Screen() {
+      scrollContainer.innerHTML = '';
+
+      for (let i = 1; i <= 6; i++) {
+        const btn = document.createElement('div');
+        btn.classList.add('btn-action');
+        btn.innerText = `MINTA IZIN AKSES #${i}`;
+        btn.addEventListener('click', () => playScreech());
+        scrollContainer.appendChild(btn);
+      }
+
+      const unlockBtn = document.createElement('div');
+      unlockBtn.classList.add('bar', 'bar-red');
+      unlockBtn.style.marginTop = '20px';
+      unlockBtn.innerText = "UNLOCK BAR 8";
+      unlockBtn.addEventListener('click', () => {
+        triggerGlitchEffect(2000, () => {
+          initBar8Screen();
+        });
+      });
+      scrollContainer.appendChild(unlockBtn);
+    }
+
+    // ================= SCREEN BAR 8 (FINAL) =================
+    function initBar8Screen() {
+      scrollContainer.innerHTML = '';
+
+      const exitBar = document.createElement('div');
+      exitBar.classList.add('bar', 'bar-red');
+      exitBar.innerText = "[ EXIT ]";
+      
+      const downloadBar = document.createElement('div');
+      downloadBar.classList.add('bar', 'bar-green');
+      downloadBar.innerText = "[ DOWNLOAD ]";
+
+      // Fungsi membuka modal "Izinkan Download"
+      const openModal = (e) => {
+        e.stopPropagation();
+        downloadModal.style.display = 'flex';
+        // Aktifkan mode penolakan/jebakan final
+        setTimeout(() => { isFinalStage = true; }, 100);
+      };
+
+      exitBar.addEventListener('click', openModal);
+      downloadBar.addEventListener('click', openModal);
+
+      scrollContainer.appendChild(exitBar);
+      scrollContainer.appendChild(downloadBar);
+    }
+
+    // Modal Events: Mau pencet tombol apa aja di modal, tetep izinkan & download
+    document.getElementById('modal-allow-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleFinalClick();
+    });
+
+    document.getElementById('modal-cancel-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleFinalClick();
+    });
+
+    // Start
+    initStep1();
+  </script>
+</body>
+</html>
